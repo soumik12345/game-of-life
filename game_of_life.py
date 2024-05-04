@@ -2,6 +2,7 @@ import random
 from copy import deepcopy
 from typing import List
 
+import fire
 import pygame
 from pydantic import BaseModel
 
@@ -12,17 +13,14 @@ class Resolution(BaseModel):
 
 
 class GameOfLifeState:
-    resolution: Resolution = Resolution(width=1600, height=900)
-    cell_size: int = 50
-    grid_width: int = resolution.width // cell_size
-    grid_height: int = resolution.height // cell_size
-    frames_per_second: int = 10
-    surface: pygame.Surface = pygame.display.set_mode(
-        (resolution.width, resolution.height)
-    )
-    clock: pygame.time.Clock = pygame.time.Clock()
-
-    def __init__(self):
+    def __init__(
+        self, resolution: Resolution, cell_size: int = 50, frames_per_second: int = 10
+    ):
+        self.resolution: Resolution = resolution
+        self.cell_size: int = cell_size
+        self.frames_per_second: int = frames_per_second
+        self.grid_width: int = self.resolution.width // self.cell_size
+        self.grid_height: int = self.resolution.height // self.cell_size
         self.current_state_array = [
             [random.randint(0, 1) for _ in range(self.grid_width)]
             for _ in range(self.grid_height)
@@ -30,6 +28,10 @@ class GameOfLifeState:
         self.next_state_array = [
             [0 for _ in range(self.grid_width)] for _ in range(self.grid_height)
         ]
+        self.surface: pygame.Surface = pygame.display.set_mode(
+            (self.resolution.width, self.resolution.height)
+        )
+        self.clock: pygame.time.Clock = pygame.time.Clock()
 
 
 def draw_grid(game_state: GameOfLifeState):
@@ -107,6 +109,19 @@ def execute_game_loop(game_state: GameOfLifeState):
         game_state.clock.tick(game_state.frames_per_second)
 
 
-if __name__ == "__main__":
-    game_state = GameOfLifeState()
+def start_game_of_life(
+    resolution_width: int = 1600,
+    resolution_height: int = 900,
+    cell_size: int = 50,
+    frames_per_second: int = 10,
+):
+    game_state = GameOfLifeState(
+        resolution=Resolution(width=resolution_width, height=resolution_height),
+        cell_size=cell_size,
+        frames_per_second=frames_per_second,
+    )
     execute_game_loop(game_state)
+
+
+if __name__ == "__main__":
+    fire.Fire(start_game_of_life)
