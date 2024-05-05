@@ -1,10 +1,8 @@
-import random
-from copy import deepcopy
-from typing import List
-
-import fire
+import numpy as np
 import pygame
+import random
 from pydantic import BaseModel
+import fire
 
 
 class Resolution(BaseModel):
@@ -21,13 +19,9 @@ class GameOfLifeState:
         self.frames_per_second: int = frames_per_second
         self.grid_width: int = self.resolution.width // self.cell_size
         self.grid_height: int = self.resolution.height // self.cell_size
-        self.current_state_array = [
-            [random.randint(0, 1) for _ in range(self.grid_width)]
-            for _ in range(self.grid_height)
-        ]
-        self.next_state_array = [
-            [0 for _ in range(self.grid_width)] for _ in range(self.grid_height)
-        ]
+        self.current_state_array = np.random.randint(
+            2, size=(self.grid_height, self.grid_width)
+        )
         self.surface: pygame.Surface = pygame.display.set_mode(
             (self.resolution.width, self.resolution.height)
         )
@@ -51,29 +45,31 @@ def draw_grid(game_state: GameOfLifeState):
         )
 
 
-def check_cell(
-    current_state_array: List[List[int]], cell_coordinate_x: int, cell_coordinate_y: int
-) -> int:
-    neighbor_count = 0
-    for j in range(cell_coordinate_y - 1, cell_coordinate_y + 2):
-        for i in range(cell_coordinate_x - 1, cell_coordinate_x + 2):
-            if current_state_array[j][i] == 1:
-                neighbor_count += 1
-    if current_state_array[cell_coordinate_y][cell_coordinate_x] == 1:
-        neighbor_count -= 1
-        if neighbor_count == 2 or neighbor_count == 3:
-            return 1
-        return 0
-    else:
-        if neighbor_count == 3:
-            return 1
-        return 0
-
-
 def simulate_life(game_state: GameOfLifeState) -> GameOfLifeState:
-    for x in range(1, game_state.grid_width - 1):
-        for y in range(1, game_state.grid_height - 1):
-            if game_state.current_state_array[y][x] == 1:
+    neighbor_count = np.zeros((game_state.grid_height, game_state.grid_width))
+    for dx, dy in [
+        (-1, -1),
+        (-1, 0),
+        (-1, 1),
+        (0, -1),
+        (0, 1),
+        (1, -1),
+        (1, 0),
+        (1, 1),
+    ]:
+        neighbor_count += np.roll(
+            np.roll(game_state.current_state_array, dy, axis=0), dx, axis=1
+        )
+
+    birth = (neighbor_count == 3) & (game_state.current_state_array == 0)
+    survival = ((neighbor_count == 2) | (neighbor_count == 3)) & (
+        game_state.current_state_array == 1
+    )
+    game_state.current_state_array = np.where(birth | survival, 1, 0)
+
+    for y in range(game_state.grid_height):
+        for x in range(game_state.grid_width):
+            if game_state.current_state_array[y, x] == 1:
                 rectangle_coordinates = (
                     x * game_state.cell_size + 2,
                     y * game_state.cell_size + 2,
@@ -85,10 +81,6 @@ def simulate_life(game_state: GameOfLifeState) -> GameOfLifeState:
                     pygame.Color("forestgreen"),
                     rectangle_coordinates,
                 )
-            game_state.next_state_array[y][x] = check_cell(
-                game_state.current_state_array, x, y
-            )
-    game_state.current_state_array = deepcopy(game_state.next_state_array)
     return game_state
 
 
