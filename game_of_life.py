@@ -25,6 +25,18 @@ class GameOfLifeState:
             [random.randint(0, 1) for _ in range(self.grid_width)]
             for _ in range(self.grid_height)
         ]
+        # self.current_state_array = [
+        #     [1 if not i % 33 else 0 for i in range(self.grid_width)]
+        #     for _ in range(self.grid_height)
+        # ]
+        # self.current_state_array = [
+        #     [1 if not (4 * i + j) % 4 else 0 for i in range(self.grid_width)]
+        #     for j in range(self.grid_height)
+        # ]
+        # self.current_state_array = [
+        #     [1 if not (i * j) % 22 else 0 for i in range(self.grid_width)]
+        #     for j in range(self.grid_height)
+        # ]
         self.next_state_array = [
             [0 for _ in range(self.grid_width)] for _ in range(self.grid_height)
         ]
@@ -106,6 +118,7 @@ def execute_game_loop(game_state: GameOfLifeState):
                 exit()
         game_state = execute_game_logic(game_state)
         pygame.display.flip()
+        pygame.display.set_caption(f"FPS: {game_state.clock.get_fps():.3f}")
         game_state.clock.tick(game_state.frames_per_second)
 
 
